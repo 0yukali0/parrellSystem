@@ -47,7 +47,7 @@ func (j *Job)SetGetResourceTime(releaseTimestamp uint64) {
 
 func (j *Job)Finish() {
 	time1 := j.Submission
-	time2 := j.ResourceGetTime + j.ExecutionTime
+	time2 := j.ResourceGetTime
 	j.SimulateWaitDuration = time2 - time1
 }
 
