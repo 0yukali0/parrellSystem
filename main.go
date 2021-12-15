@@ -40,7 +40,7 @@ func main() {
 			if common.Allocate(job.Allocation, job.Allocated) {
 				job.Allocated = true
 				event := job.GetManagerAndSetItRunning(LastResourceReleasTime)
-				event.ToNextStep()
+				event.ToNextStepInWaiting()
 				//fmt.Printf("%10v, WAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
 				heap.Push(&events, event)
 			} else {

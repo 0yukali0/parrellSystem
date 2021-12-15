@@ -50,6 +50,18 @@ func (e *Event) ToNextStep() (bool, uint64){
 	return false, 0
 }
 
+func (e *Event) ToNextStepInWaiting() (bool, uint64){
+	eventType := e.Status
+	if eventType == common.EventStatus[0] {
+		e.Status =  common.EventStatus[1]
+		job := e.GetJob()
+		e.TimeStamp = job.ResourceGetTime + job.ExecutionTime
+	} else {
+		return true ,e.GetJob().GetWaitingTime()
+	}
+	return false, 0
+}
+
 func (e *Event) GetJob() *Job{
 	return e.JobMeta
 }
