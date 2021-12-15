@@ -42,7 +42,7 @@ func (e *Event) ToNextStep() (bool, uint64){
 	if eventType == common.EventStatus[0] {
 		e.Status =  common.EventStatus[1]
 		job := e.GetJob()
-		e.TimeStamp = job.Submission + job.ExecutionTime
+		e.TimeStamp = job.Submission + job.ExecutionTime // finish time
 		job.ResourceGetTime = job.Submission
 	} else {
 		return true ,e.GetJob().GetWaitingTime()

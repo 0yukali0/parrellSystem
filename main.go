@@ -41,8 +41,9 @@ func main() {
 				job.Allocated = true
 				event := job.GetManagerAndSetItRunning(LastResourceReleasTime)
 				event.ToNextStepInWaiting()
-				//fmt.Printf("%10v, WAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
+				fmt.Printf("%10v, WAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
 				heap.Push(&events, event)
+				continue
 			} else {
 				heap.Push(&jobs, job)
 			}
@@ -62,7 +63,7 @@ func main() {
 		if eventType == common.EventStatus[0] {
 			//Keep FCFS
 			if !jobs.IsEmpty() {
-				//fmt.Printf("%10v, Waiting for waiting queue and req %v\n", event.GetJob().Id, event.GetJob().Allocation)
+				fmt.Printf("%10v, Waiting for waiting queue and req %v\n", event.GetJob().Id, event.GetJob().Allocation)
 				heap.Push(&jobs, event.GetJob())
 				continue
 			}
@@ -70,14 +71,15 @@ func main() {
 			// resource isn't enough
 			ok := common.Allocate(event.GetJob().Allocation, event.GetJob().Allocated)
 			if !ok {
-				//fmt.Printf("%10v, Waiting for cpu %v\n", event.GetJob().Id, event.GetJob().Allocation)
+				fmt.Printf("%10v, Waiting for cpu %v\n", event.GetJob().Id, event.GetJob().Allocation)
 				heap.Push(&jobs, event.GetJob())
 				continue
 			}
 	
+			// sufficient cpu
 			job := event.GetJob()
 			job.Allocated = true
-			//fmt.Printf("%10v, EAllocate in %10v:	%3v:%3v	sub:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission)
+			fmt.Printf("%10v, EAllocate in %10v:	%3v:%3v	sub:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission)
 			event.ToNextStep()
 			heap.Push(&events, event)
 			continue
@@ -91,7 +93,7 @@ func main() {
 			WaitingTotalTime += job.GetWaitingTime()
 			LastResourceReleasTime = job.GetWaitingTime() + job.Submission + job.ExecutionTime
 			event.GetJob().Allocated = false
-			//fmt.Printf("%10v, Release in %10v:	%3v:%3v	sub:%10v	waitForStart:%10v	GetTime:%10v	Finish:%10v\n", job.Id, event.TimeStamp , common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning(), job.ResourceGetTime, job.Submission+job.SimulateWaitDuration)
+			fmt.Printf("%10v, Release in %10v:	%3v:%3v	sub:%10v	waitForStart:%10v	GetTime:%10v	Finish:%10v\n", job.Id, event.TimeStamp , common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning(), job.ResourceGetTime, job.Submission+job.SimulateWaitDuration+job.ExecutionTime)
 			if events.Len() == 0 {
 				break
 			}
