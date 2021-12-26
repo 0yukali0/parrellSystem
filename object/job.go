@@ -58,4 +58,3 @@ func (j *Job)GetWaitingTime() uint64 {
 func (j *Job)GetWaitingTimeBeforeRunning() uint64{
 	return j.ResourceGetTime - j.Submission
 }
-
