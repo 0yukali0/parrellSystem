@@ -8,8 +8,8 @@ var (
 	Events = make(EventPQ, 0)
 )
 
-func GetEventsQueue() EventPQ{
-	return Events
+func GetEventsQueue() *EventPQ{
+	return &Events
 }
 
 type EventPQ []*object.Event

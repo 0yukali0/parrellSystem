@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	FilePath = "C:\\Users\\a08h0\\研究生\\研一\\parral\\simulation\\SDSC-SP2-1998-4.2-cln.swf"
+	FilePath = "C:\\Users\\a08h0\\研究生\\研一\\parral\\simulation\\backfilling\\parrellSystem\\SDSC-SP2-1998-4.2-cln.swf"
 )
 
 var (
@@ -40,4 +40,8 @@ func Release(alloc uint64, allocated bool) {
 	if allocated {
 		ProcessNum += alloc
 	}
+}
+
+func GetCurrentProcessNum() uint64 {
+	return ProcessNum
 }

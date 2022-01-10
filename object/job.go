@@ -29,6 +29,10 @@ func NewJob(id string, sub, exe, alloc uint64) *Job{
 	}
 }
 
+func (j *Job) GetAllocation() uint64 {
+	return j.Allocation
+}
+
 func (j *Job)SetManager(e *Event) {
 	j.Manager = e
 }

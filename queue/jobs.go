@@ -8,8 +8,8 @@ var (
 	Jobs = make(JobPQ, 0)
 )
 
-func GetJobsQueue() JobPQ{
-	return Jobs
+func GetJobsQueue() *JobPQ{
+	return &Jobs
 }
 
 type JobPQ []*object.Job
