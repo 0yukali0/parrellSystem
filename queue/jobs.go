@@ -4,14 +4,6 @@ import (
 	"simulation/object"
 )
 
-var (
-	Jobs = make(JobPQ, 0)
-)
-
-func GetJobsQueue() *JobPQ{
-	return &Jobs
-}
-
 type JobPQ []*object.Job
 
 func (pq JobPQ) Len() int { return len(pq) }

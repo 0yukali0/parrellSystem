@@ -4,14 +4,6 @@ import (
 	"simulation/object"
 )
 
-var (
-	Events = make(EventPQ, 0)
-)
-
-func GetEventsQueue() *EventPQ{
-	return &Events
-}
-
 type EventPQ []*object.Event
 
 func (pq EventPQ) Len() int { return len(pq) }

@@ -23,8 +23,6 @@ func main() {
 	result := reader.ReadFile(common.FilePath)
 	events := queue.GetEventsQueue()
 	jobs := queue.GetJobsQueue()
-	heap.Init(jobs)
-	heap.Init(events)
 	var basic string
 	// assign event to event queue
 	for idx, meta := range result {
