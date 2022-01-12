@@ -27,7 +27,7 @@ func Backfilling(suspendSubmitTime uint64) {
 				job.Allocated = true
 				event := job.GetManagerAndSetItRunning(suspendSubmitTime)
 				event.ToNextStepInWaiting()
-				//fmt.Printf("%10v, BackAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
+				//fmt.Printf("%10v, WBackAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
 				heap.Push(events, event)
 				continue
 			}
@@ -61,6 +61,7 @@ func Backfilling(suspendSubmitTime uint64) {
 					job := event.GetJob()
 					job.Allocated = true
 					event.ToNextStep()
+					//fmt.Printf("%10v, EBackAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
 					heap.Push(events, event)
 				}
 			}

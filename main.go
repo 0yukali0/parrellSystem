@@ -6,10 +6,15 @@ import (
 	"simulation/object"
 	"simulation/common"
 	"simulation/backfill"
+	"simulation/preempt"
 	"container/heap"
 	"fmt"
 )
 
+var (
+	backfillActive = false
+	preemptActive = true
+)
 var LastResourceReleasTime uint64
 var WaitingTotalTime uint64
 
@@ -37,11 +42,10 @@ func main() {
 		// 1.is job queue empty?
 		if len := jobs.Len();len > 0 {
 			job := heap.Pop(jobs).(*object.Job)
-
+			event := job.GetManagerAndSetItRunning(LastResourceReleasTime)
 			// 2. if it's not empty, check whether resource is enough.
 			if common.Allocate(job.Allocation, job.Allocated) {
 				job.Allocated = true
-				event := job.GetManagerAndSetItRunning(LastResourceReleasTime)
 				event.ToNextStepInWaiting()
 				//fmt.Printf("%10v, WAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
 				heap.Push(events, event)
@@ -67,10 +71,12 @@ func main() {
 			if !jobs.IsEmpty() {
 				//fmt.Printf("%10v, Waiting for waiting queue and req %v\n", event.GetJob().Id, event.GetJob().Allocation)
 				heap.Push(jobs, event.GetJob())
-
-				if NextBackfill{
+				if NextBackfill && backfillActive{
 					backfill.Backfilling(event.TimeStamp)
 					NextBackfill = false
+				}
+				if preemptActive {
+					preempt.Preempt(event.TimeStamp)
 				}
 				continue
 			}
@@ -113,6 +119,6 @@ func main() {
 			}
 		}
 	}
-	//43117 58206
+	//58206 7387 7300
 	fmt.Printf("Average time of %v jobs are %v seconds\n", totalLen,WaitingTotalTime/totalLen)
 }
