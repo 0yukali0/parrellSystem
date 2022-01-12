@@ -13,7 +13,7 @@ import (
 
 var (
 	backfillActive = false
-	preemptActive = true
+	preemptActive = false
 )
 var LastResourceReleasTime uint64
 var WaitingTotalTime uint64
