@@ -84,20 +84,20 @@ func (e *Event) handleSubmitSucess(event *fsm.Event) {
 	job.ComputeWaitingTime()
 	job.ComputeFinishTime()
 	
-	fmt.Printf("%-6v EAllocate id:%-5v, %v in %v, cpu:%v,%v sub: %6v, exe: %v, getTime: %v, waiting: %v\n",
+	fmt.Printf("%-6v EAllocate id:%-5v, %v in %v, cpu:%v,%v sub: %6v, getTime: %v, waiting: %v\n",
 	 common.GetSystemClock(),
 	 job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
-	 job.GetSubmitTime(), job.GetExecutionTime(), job.GetResourceGetTime(), job.GetWaitingTime())
+	 job.GetSubmitTime(), job.GetResourceGetTime(), job.GetWaitingTime())
 	
 	e.SetTimeStamp(job.GetFinishTime())
 }
 
 func (e *Event) handleSubmitFail (event *fsm.Event) {
 	job := e.GetJob()
-	fmt.Printf("%-6v StartWaiting id:%-5v, cpu:%v,%v sub: %6v, exe: %v\n",
+	fmt.Printf("%-6v StartWaiting id:%-5v, cpu:%v,%v sub: %6v\n",
 	common.GetSystemClock(),
 	job.Id, common.GetCurrentProcessNum(), job.GetAllocation(), 
-	job.GetSubmitTime(), job.GetExecutionTime())
+	job.GetSubmitTime())
 }
 
 func (e *Event) handleWaitAndAllocated(event *fsm.Event) {
@@ -106,10 +106,10 @@ func (e *Event) handleWaitAndAllocated(event *fsm.Event) {
 	job.ComputeWaitingTime()
 	job.ComputeFinishTime()
 	
-	fmt.Printf("%-6v WaitingEnd id:%-5v, %v in %v, cpu:%v,%v sub: %6v, exe: %v, getTime: %v, waiting: %v\n",
+	fmt.Printf("%-6v WaitingEnd id:%-5v, %v in %v, cpu:%v,%v sub: %6v, getTime: %v, waiting: %v\n",
 	common.GetSystemClock(),
 	job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
-	job.GetSubmitTime(), job.GetExecutionTime(), job.GetResourceGetTime(), job.GetWaitingTime())
+	job.GetSubmitTime(), job.GetResourceGetTime(), job.GetWaitingTime())
 	
 	e.SetTimeStamp(job.GetFinishTime())
 }

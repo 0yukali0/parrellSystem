@@ -32,44 +32,16 @@ func main() {
 	WaitingTotalTime := uint64(0)
 	totalRequestLen := uint64(submitAndFinishQueue.Len())
 
-	finish := false
-	isEventInThisMomentsFinished := false
-	for !finish {
-		if waitingQueue.Len() > 0 {
-			event := heap.Pop(waitingQueue).(*object.Event)
-			job := event.GetJob()
-			if common.Allocate(job.GetAllocation(), job.Allocated) {
-				event.Handle("WaitAndAllocated")
-				heap.Push(submitAndFinishQueue, event)
-				continue
-			} else {
-				isEventInThisMomentsFinished = true
-				heap.Push(waitingQueue, event)
-			}
-		} else if waitingQueue.Len() == 0 {
-			isEventInThisMomentsFinished = true
-		}
-
-		//fmt.Printf("EventQueue len: %v, WaitingQueue len %v\n", submitAndFinishQueue.Len(), waitingQueue.Len())
-		if pendingEventsNum := submitAndFinishQueue.Len() + waitingQueue.Len(); pendingEventsNum == 0 {
-			finish = true
-			break
-		}
-	
-		for submitAndFinishQueue.Len() > 0 {
+	for pendingEventsNum := submitAndFinishQueue.Len() + waitingQueue.Len(); pendingEventsNum > 0; {
+		if submitAndFinishQueue.Len() > 0 {
 			event := heap.Pop(submitAndFinishQueue).(*object.Event)
 			job := event.GetJob()
-			// find next timestamp and need waiting queue unlock it
-			if event.GetTimeStamp() != common.GetSystemClock() {
-				if isEventInThisMomentsFinished {
-					common.SetSystemClock(event.GetTimeStamp())
-				}
-				heap.Push(submitAndFinishQueue, event)
-				break
-			}
 
+			// In this moment, event action
 			switch event.GetStatus() {
 			case "Submit":
+				// FCFS base condition
+				common.SetSystemClock(event.GetJob().GetSubmitTime())
 				if waitingQueue.Len() > 0 {
 					event.Handle("SubmitFail")
 					heap.Push(waitingQueue, event)
@@ -84,8 +56,24 @@ func main() {
 					heap.Push(waitingQueue, event)
 				}
 			case "Finish":
+				common.SetSystemClock(event.GetJob().GetFinishTime())
 				event.Handle("ReleaseResource")
-				WaitingTotalTime +=  job.GetWaitingTime()
+				WaitingTotalTime += job.GetWaitingTime()
+			}
+		} else {
+			break
+		}
+
+		for waitingQueue.Len() > 0 {
+			event := heap.Pop(waitingQueue).(*object.Event)
+			job := event.GetJob()
+			if common.Allocate(job.GetAllocation(), job.Allocated) {
+				event.Handle("WaitAndAllocated")
+				heap.Push(submitAndFinishQueue, event)
+				continue
+			} else {
+				heap.Push(waitingQueue, event)
+				break
 			}
 		}
 	}
