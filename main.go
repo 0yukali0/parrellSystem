@@ -10,6 +10,10 @@ import (
 	"fmt"
 )
 
+var (
+	preemptActive = true
+)
+
 func main() {
 	result := reader.ReadFile(common.FilePath)
 	submitAndFinishQueue := queue.GetEventsQueue()
@@ -40,8 +44,13 @@ func main() {
 			// In this moment, event action
 			switch event.GetStatus() {
 			case "Submit":
-				// FCFS base condition
 				common.SetSystemClock(event.GetJob().GetSubmitTime())
+				if preemptActive {
+					event.Handle("SubmitFail")
+					heap.Push(waitingQueue, event)
+					break
+				}
+				// FCFS base condition
 				if waitingQueue.Len() > 0 {
 					event.Handle("SubmitFail")
 					heap.Push(waitingQueue, event)
@@ -64,6 +73,7 @@ func main() {
 			break
 		}
 
+		preemptFail := make([]*object.Event,0)
 		for waitingQueue.Len() > 0 {
 			event := heap.Pop(waitingQueue).(*object.Event)
 			job := event.GetJob()
@@ -71,9 +81,18 @@ func main() {
 				event.Handle("WaitAndAllocated")
 				heap.Push(submitAndFinishQueue, event)
 				continue
+			} else if preemptActive {
+				preemptFail = append(preemptFail, event)
 			} else {
 				heap.Push(waitingQueue, event)
 				break
+			}
+		}
+
+		// Put fail preempt items back to queue 
+		if preemptActive {
+			for _, event := range preemptFail {
+				heap.Push(waitingQueue, event)
 			}
 		}
 	}

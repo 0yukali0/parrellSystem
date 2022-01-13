@@ -83,7 +83,6 @@ func (e *Event) handleSubmitSucess(event *fsm.Event) {
 	job.SetResourceGetTime(e.GetTimeStamp())
 	job.ComputeWaitingTime()
 	job.ComputeFinishTime()
-	
 	fmt.Printf("%-6v EAllocate id:%-5v, %v in %v, cpu:%v,%v sub: %6v, getTime: %v, waiting: %v\n",
 	 common.GetSystemClock(),
 	 job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
@@ -105,22 +104,18 @@ func (e *Event) handleWaitAndAllocated(event *fsm.Event) {
 	job.SetResourceGetTime(common.GetSystemClock())
 	job.ComputeWaitingTime()
 	job.ComputeFinishTime()
-	
 	fmt.Printf("%-6v WaitingEnd id:%-5v, %v in %v, cpu:%v,%v sub: %6v, getTime: %v, waiting: %v\n",
 	common.GetSystemClock(),
 	job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
 	job.GetSubmitTime(), job.GetResourceGetTime(), job.GetWaitingTime())
-	
 	e.SetTimeStamp(job.GetFinishTime())
 }
 
 func (e *Event) handleReleaseResource(event *fsm.Event) {
 	job := e.GetJob()
 	common.Release(job.GetAllocation(), job.Allocated)
-	
 	fmt.Printf("%-6v Release id:%-5v, %v, cpu:%v,%v sub: %6v, exe: %v, getTime: %v, waiting: %v, Finish: %v\n",
 	common.GetSystemClock(),
 	job.Id, e.Status.Current(), common.GetCurrentProcessNum(), job.GetAllocation(), 
 	job.GetSubmitTime(), job.GetExecutionTime(), job.GetResourceGetTime(), job.GetWaitingTime(), job.GetFinishTime())
-	
 }
