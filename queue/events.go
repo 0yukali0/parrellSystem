@@ -2,7 +2,26 @@ package queue
 
 import (
 	"simulation/object"
+	"container/heap"
 )
+
+var (
+	SubmitAndFinishQueue = make(EventPQ, 0)
+	WaintingQueue = make(EventPQ, 0)
+)
+
+func init() {
+	heap.Init(GetWaitingQueue())
+	heap.Init(GetEventsQueue())
+}
+
+func GetEventsQueue() *EventPQ{
+	return &SubmitAndFinishQueue
+}
+
+func GetWaitingQueue() *EventPQ{
+	return &WaintingQueue
+}
 
 type EventPQ []*object.Event
 

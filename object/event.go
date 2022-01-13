@@ -1,67 +1,126 @@
 package object
 
 import (
-	"simulation/common"
-	"simulation/reader"
 	"strconv"
+	"github.com/looplab/fsm"
+
+	"simulation/reader"
+	"simulation/common"
+	"fmt"
 )
 
 type Event struct {
-	Status    string
+	Status    *fsm.FSM
 	Index 	  int
 	TimeStamp uint64
 	JobMeta   *Job
 }
 
-func NewEvent(eventType string, j *reader.JobDes, basicSub string) *Event {
-	var timeStamp, sub, running, processNum uint64
+func NewEvent(j *reader.JobDes, firstSubmitEventTime string) *Event {
+	var submitTime, executionTime, processNum uint64
 	var err error
-	sub, err = strconv.ParseUint(j.Sub, 10, 64)
+
+	id := j.Name
+	submitTime, err = strconv.ParseUint(j.Submit, 10, 64)
 	common.Check(err)
-	sub2, err := strconv.ParseUint(basicSub, 10, 64)
+	submitBase, err := strconv.ParseUint(firstSubmitEventTime, 10, 64)
 	common.Check(err)
-	sub = sub - sub2
-	timeStamp = sub
-	running, err = strconv.ParseUint(j.Running, 10, 64)
+	submitTime -= submitBase
+	executionTime, err = strconv.ParseUint(j.Running, 10, 64)
 	common.Check(err)
 	processNum, err = strconv.ParseUint(j.Allocation, 10, 64)
 	common.Check(err)
-	id := j.Name
+
 	e := &Event{
-		Status:    eventType,
-		TimeStamp: timeStamp,
-		JobMeta:   NewJob(id, sub, running, processNum),
+		TimeStamp: submitTime,
+		JobMeta:   NewJob(id, submitTime, executionTime, processNum),
 	}
-	e.JobMeta.SetManager(e)
+
+	e.Status = fsm.NewFSM(
+		"Submit",
+		fsm.Events{
+			{Name:"SubmitSucess", Src: []string{"Submit"}, Dst:"Finish"},
+			{Name:"SubmitFail", Src: []string{"Submit"}, Dst:"Waiting"},
+			{Name:"WaitAndAllocated", Src: []string{"Waiting"}, Dst:"Finish"},
+			{Name:"ReleaseResource", Src: []string{"Finish"}, Dst:"Release"},
+		},
+		fsm.Callbacks{
+			"SubmitSucess": e.handleSubmitSucess,
+			"SubmitFail": e.handleSubmitFail,
+			"WaitAndAllocated": e.handleWaitAndAllocated,
+			"ReleaseResource": e.handleReleaseResource,
+		},
+	)
+	e.GetJob().SetManager(e)
 	return e
 }
 
-// no waiting job will do it
-func (e *Event) ToNextStep() (bool, uint64){
-	eventType := e.Status
-	if eventType == common.EventStatus[0] {
-		e.Status =  common.EventStatus[1]
-		job := e.GetJob()
-		e.TimeStamp = job.Submission + job.ExecutionTime // finish time
-		job.ResourceGetTime = job.Submission
-	} else {
-		return true ,e.GetJob().GetWaitingTime()
-	}
-	return false, 0
-}
-
-func (e *Event) ToNextStepInWaiting() (bool, uint64){
-	eventType := e.Status
-	if eventType == common.EventStatus[0] {
-		e.Status =  common.EventStatus[1]
-		job := e.GetJob()
-		e.TimeStamp = job.ResourceGetTime + job.ExecutionTime
-	} else {
-		return true ,e.GetJob().GetWaitingTime()
-	}
-	return false, 0
+func (e *Event) GetStatus() string {
+	return e.Status.Current()
 }
 
 func (e *Event) GetJob() *Job{
 	return e.JobMeta
+}
+
+func (e *Event) GetTimeStamp() uint64 {
+	return e.TimeStamp
+}
+
+func (e *Event) SetTimeStamp(timeStamp uint64) {
+	e.TimeStamp = timeStamp
+}
+
+func (e *Event) Handle(event string) {
+	err := e.Status.Event(event)
+	if err != nil {
+		panic(e)
+	}
+}
+
+func (e *Event) handleSubmitSucess(event *fsm.Event) {
+	job := e.GetJob()
+	job.SetResourceGetTime(e.GetTimeStamp())
+	job.ComputeWaitingTime()
+	job.ComputeFinishTime()
+	
+	fmt.Printf("%-6v EAllocate id:%-5v, %v in %v, cpu:%v,%v sub: %6v, exe: %v, getTime: %v, waiting: %v\n",
+	 common.GetSystemClock(),
+	 job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
+	 job.GetSubmitTime(), job.GetExecutionTime(), job.GetResourceGetTime(), job.GetWaitingTime())
+	
+	e.SetTimeStamp(job.GetFinishTime())
+}
+
+func (e *Event) handleSubmitFail (event *fsm.Event) {
+	job := e.GetJob()
+	fmt.Printf("%-6v StartWaiting id:%-5v, cpu:%v,%v sub: %6v, exe: %v\n",
+	common.GetSystemClock(),
+	job.Id, common.GetCurrentProcessNum(), job.GetAllocation(), 
+	job.GetSubmitTime(), job.GetExecutionTime())
+}
+
+func (e *Event) handleWaitAndAllocated(event *fsm.Event) {
+	job := e.GetJob()
+	job.SetResourceGetTime(common.GetSystemClock())
+	job.ComputeWaitingTime()
+	job.ComputeFinishTime()
+	
+	fmt.Printf("%-6v WaitingEnd id:%-5v, %v in %v, cpu:%v,%v sub: %6v, exe: %v, getTime: %v, waiting: %v\n",
+	common.GetSystemClock(),
+	job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
+	job.GetSubmitTime(), job.GetExecutionTime(), job.GetResourceGetTime(), job.GetWaitingTime())
+	
+	e.SetTimeStamp(job.GetFinishTime())
+}
+
+func (e *Event) handleReleaseResource(event *fsm.Event) {
+	job := e.GetJob()
+	common.Release(job.GetAllocation(), job.Allocated)
+	
+	fmt.Printf("%-6v Release id:%-5v, %v, cpu:%v,%v sub: %6v, exe: %v, getTime: %v, waiting: %v, Finish: %v\n",
+	common.GetSystemClock(),
+	job.Id, e.Status.Current(), common.GetCurrentProcessNum(), job.GetAllocation(), 
+	job.GetSubmitTime(), job.GetExecutionTime(), job.GetResourceGetTime(), job.GetWaitingTime(), job.GetFinishTime())
+	
 }
