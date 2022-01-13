@@ -12,6 +12,7 @@ import (
 
 var (
 	preemptActive = true
+	backfillActive = true
 )
 
 func main() {
