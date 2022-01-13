@@ -52,16 +52,6 @@ func (j *Job) GetFinishTime() uint64 {
 	return j.FinishTime
 }
 
-/*
-// start time in waiting queue 
-func (j *Job)GetManagerAndSetItRunning(getResourceTime uint64) *Event{
-	j.Manager.TimeStamp = getResourceTime + j.ExecutionTime
-	j.Manager.Status = common.EventStatus[1]
-	j.SetGetResourceTime(getResourceTime)
-	return j.Manager
-}
-*/
-
 func (j *Job) SetResourceGetTime(releaseTimestamp uint64) {
 	j.ResourceGetTime = releaseTimestamp
 	j.Allocated = true
