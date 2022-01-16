@@ -4,9 +4,17 @@ const (
 	FilePath = "C:\\Users\\a08h0\\研究生\\研一\\parral\\simulation\\backfilling\\parrellSystem\\SDSC-SP2-1998-4.2-cln.swf"
 )
 
+const (
+	DefaultCPUNum = uint64(128)
+	DefaultTimeStart = uint64(0)
+	DefaultTimeLimit = ^uint64(0)
+	PreemptActive = true
+	BackfillActive = true
+)
+
 var (
-	ProcessNum  = uint64(128)
-	SystemClock = uint64(0)
+	ProcessNum  = DefaultCPUNum
+	SystemClock = DefaultTimeStart
 )
 
 func Check(e error) {
@@ -38,6 +46,10 @@ func Release(alloc uint64, allocated bool) {
 
 func GetCurrentProcessNum() uint64 {
 	return ProcessNum
+}
+
+func GetSystemCapcity() uint64 {
+	return DefaultCPUNum
 }
 
 func GetSystemClock() uint64 {

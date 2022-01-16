@@ -14,13 +14,16 @@ type Event struct {
 	Index 	  int
 	TimeStamp uint64
 	JobMeta   *Job
+
+	BackiilExceptTime uint64
 }
 
 func NewEvent(j *reader.JobDes, firstSubmitEventTime string) *Event {
 	var submitTime, executionTime, processNum uint64
 	var err error
 
-	id := j.Name
+	id, err := strconv.ParseUint(j.Name, 10, 64)
+	common.Check(err)
 	submitTime, err = strconv.ParseUint(j.Submit, 10, 64)
 	common.Check(err)
 	submitBase, err := strconv.ParseUint(firstSubmitEventTime, 10, 64)
@@ -41,12 +44,14 @@ func NewEvent(j *reader.JobDes, firstSubmitEventTime string) *Event {
 		fsm.Events{
 			{Name:"SubmitSucess", Src: []string{"Submit"}, Dst:"Finish"},
 			{Name:"SubmitFail", Src: []string{"Submit"}, Dst:"Waiting"},
+			{Name:"Backfill", Src: []string{"Waiting"}, Dst:"Submit"},
 			{Name:"WaitAndAllocated", Src: []string{"Waiting"}, Dst:"Finish"},
 			{Name:"ReleaseResource", Src: []string{"Finish"}, Dst:"Release"},
 		},
 		fsm.Callbacks{
 			"SubmitSucess": e.handleSubmitSucess,
 			"SubmitFail": e.handleSubmitFail,
+			"Backfill": e.handleBackfillSupport,
 			"WaitAndAllocated": e.handleWaitAndAllocated,
 			"ReleaseResource": e.handleReleaseResource,
 		},
@@ -67,8 +72,16 @@ func (e *Event) GetTimeStamp() uint64 {
 	return e.TimeStamp
 }
 
+func (e *Event) GetBackillExceptTime() uint64 {
+	return e.BackiilExceptTime
+}
+
 func (e *Event) SetTimeStamp(timeStamp uint64) {
 	e.TimeStamp = timeStamp
+}
+
+func (e *Event) SetBackiilExceptTime(exceptStartTime uint64) {
+	e.BackiilExceptTime = exceptStartTime
 }
 
 func (e *Event) Handle(event string) {
@@ -101,6 +114,10 @@ func (e *Event) handleSubmitFail (event *fsm.Event) {
 	job.Id, common.GetCurrentProcessNum(), job.GetAllocation(), 
 	job.GetSubmitTime())
 	*/
+}
+
+func (e *Event) handleBackfillSupport(event *fsm.Event) {
+	e.SetTimeStamp(e.GetBackillExceptTime())
 }
 
 func (e *Event) handleWaitAndAllocated(event *fsm.Event) {

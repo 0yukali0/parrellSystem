@@ -1,7 +1,7 @@
 package object
 
 type Job struct {
-	Id string
+	Id uint64
 	Submission uint64
 	ExecutionTime  uint64
 
@@ -16,7 +16,7 @@ type Job struct {
 	Manager *Event
 }
 
-func NewJob(id string, submitTime, executionTime, allocation uint64) *Job{
+func NewJob(id uint64, submitTime, executionTime, allocation uint64) *Job{
 	return &Job{
 		Id:				id,
 		Submission: 	submitTime,

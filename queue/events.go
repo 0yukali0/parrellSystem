@@ -28,7 +28,12 @@ type EventPQ []*object.Event
 func (pq EventPQ) Len() int { return len(pq) }
 
 func (pq EventPQ) Less(i, j int) bool {
-	return pq[i].TimeStamp < pq[j].TimeStamp
+	/*
+	if pq[i].TimeStamp == pq[j].TimeStamp {
+		return pq[i].GetJob().Id < pq[j].GetJob().Id
+	}
+	*/
+	return pq[i].GetTimeStamp() < pq[j].GetTimeStamp()
 }
 
 func (pq EventPQ) Swap(i, j int) {
