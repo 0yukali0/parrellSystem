@@ -36,15 +36,12 @@ func Backfill() {
 					continue
 				} 
 
-				event.Handle("Backfill")
-				job.SetResourceGetTime(common.GetSystemClock())
-				job.ComputeFinishTime()
-				job.ComputeWaitingTime()
-				event.SetTimeStamp(job.GetFinishTime())
+				event.Handle("SubmitSucess")
 				heap.Push(submitAndFinishQueue, event)
 			case "Finish":
 				common.SetSystemClock(event.GetTimeStamp())
 				profile.Predicate()
+				event.Handle("ReleaseResource")
 				WaitingTotalTime += job.GetResourceGetTime() - job.GetSubmitTime()
 				bk = append(bk, event)
 			}
