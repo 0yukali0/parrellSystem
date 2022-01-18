@@ -13,14 +13,14 @@ import (
 
 
 func main() {
-	readFileAndInit()
-	framework.FCFS()
 	/*
 	readFileAndInit()
-	framework.Backfill()
-	*/
+	framework.FCFS()
 	readFileAndInit()
 	framework.Preempt()
+	*/
+	readFileAndInit()
+	framework.Backfill()
 }
 
 func readFileAndInit() {

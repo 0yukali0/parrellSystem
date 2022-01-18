@@ -3,6 +3,7 @@ package queue
 import (
 	"simulation/object"
 	"container/heap"
+	"fmt"
 )
 
 var (
@@ -24,6 +25,22 @@ func GetWaitingQueue() *EventPQ{
 }
 
 type EventPQ []*object.Event
+
+func (pq *EventPQ) Show() {
+	bk := make([]*object.Event, 0)
+	for index := 5;pq.Len() > 0 && index > 0;index-- {
+		event := heap.Pop(pq).(*object.Event)
+		if event.GetStatus() == "Finish" {
+			fmt.Printf("F")
+		}
+		fmt.Printf("%v:%v-%v ", event.GetTimeStamp(), event.GetTimeStamp()+event.GetJob().GetExecutionTime(),event.GetJob().Id)
+		bk = append(bk, event)
+	}
+	fmt.Println()
+	for _, item := range bk {
+		heap.Push(pq, item)
+	}
+}
 
 func (pq EventPQ) Len() int { return len(pq) }
 

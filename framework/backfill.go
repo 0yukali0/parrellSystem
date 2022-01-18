@@ -9,30 +9,31 @@ import (
 )
 func Backfill() {
 	submitAndFinishQueue := queue.GetEventsQueue()
+	profile := queue.GetSlotQueue()
 	WaitingTotalTime := uint64(0)
 	totalRequestLen := uint64(submitAndFinishQueue.Len())
 
 	for pendingEventsNum := submitAndFinishQueue.Len(); pendingEventsNum > 0; {
+		//submitAndFinishQueue.Show()
 		if submitAndFinishQueue.Len() > 0 {
 			event := heap.Pop(submitAndFinishQueue).(*object.Event)
 			job := event.GetJob()
 
-			// In this moment, event action
 			switch event.GetStatus() {
 			case "Submit":
-				common.SetSystemClock(event.GetJob().GetSubmitTime())
-				// FCFS base condition
+				common.SetSystemClock(event.GetTimeStamp())
+				if !event.BackfillActive {
+					startTime := profile.Allocate(job.GetExecutionTime(), job.GetAllocation())
+					event.SetBackillExceptTime(startTime)
+					event.HandleBackfillSupport()
+					heap.Push(submitAndFinishQueue, event)
+					continue
+				} 
 
 				if common.Allocate(job.GetAllocation(), job.Allocated) {
 					event.Handle("SubmitSucess")
-					heap.Push(submitAndFinishQueue, event)
-				 } else {
-					if common.BackfillActive {
-						event.Handle("Backfill")
-						heap.Push(submitAndFinishQueue, event)
-						continue
-					}
-				}
+				 }
+				heap.Push(submitAndFinishQueue, event)
 			case "Finish":
 				common.SetSystemClock(event.GetJob().GetFinishTime())
 				event.Handle("ReleaseResource")

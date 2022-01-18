@@ -2,30 +2,14 @@ package queue
 
 import (
 	"simulation/object"
-	"simulation/common"
-	"container/heap"
 )
-
-var (
-	SlotsQueue = make(SlotPQ, 0)
-)
-
-func init() {
-	heap.Init(GetSlotQueue())
-	root := object.NewSlot(common.DefaultTimeStart, common.GetSystemCapcity(), common.DefaultTimeLimit, 0, nil)
-	heap.Push(GetSlotQueue(), root)
-}
-
-func GetSlotQueue() *SlotPQ {
-	return &SlotsQueue
-}
 
 type SlotPQ []*object.Slot
 
 func (pq SlotPQ) Len() int { return len(pq) }
 
 func (pq SlotPQ) Less(i, j int) bool {
-	return pq[i].GetStartTime() < pq[j].GetStartTime()
+	return pq[i].GetStart() < pq[j].GetStart()
 }
 
 func (pq SlotPQ) Swap(i, j int) {

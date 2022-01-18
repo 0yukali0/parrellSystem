@@ -6,7 +6,7 @@ import (
 
 	"simulation/reader"
 	"simulation/common"
-	//"fmt"
+	"fmt"
 )
 
 type Event struct {
@@ -15,6 +15,7 @@ type Event struct {
 	TimeStamp uint64
 	JobMeta   *Job
 
+	BackfillActive bool
 	BackiilExceptTime uint64
 }
 
@@ -37,6 +38,7 @@ func NewEvent(j *reader.JobDes, firstSubmitEventTime string) *Event {
 	e := &Event{
 		TimeStamp: submitTime,
 		JobMeta:   NewJob(id, submitTime, executionTime, processNum),
+		BackfillActive: false,
 	}
 
 	e.Status = fsm.NewFSM(
@@ -44,14 +46,12 @@ func NewEvent(j *reader.JobDes, firstSubmitEventTime string) *Event {
 		fsm.Events{
 			{Name:"SubmitSucess", Src: []string{"Submit"}, Dst:"Finish"},
 			{Name:"SubmitFail", Src: []string{"Submit"}, Dst:"Waiting"},
-			{Name:"Backfill", Src: []string{"Waiting"}, Dst:"Submit"},
 			{Name:"WaitAndAllocated", Src: []string{"Waiting"}, Dst:"Finish"},
 			{Name:"ReleaseResource", Src: []string{"Finish"}, Dst:"Release"},
 		},
 		fsm.Callbacks{
 			"SubmitSucess": e.handleSubmitSucess,
 			"SubmitFail": e.handleSubmitFail,
-			"Backfill": e.handleBackfillSupport,
 			"WaitAndAllocated": e.handleWaitAndAllocated,
 			"ReleaseResource": e.handleReleaseResource,
 		},
@@ -80,13 +80,14 @@ func (e *Event) SetTimeStamp(timeStamp uint64) {
 	e.TimeStamp = timeStamp
 }
 
-func (e *Event) SetBackiilExceptTime(exceptStartTime uint64) {
+func (e *Event) SetBackillExceptTime(exceptStartTime uint64) {
 	e.BackiilExceptTime = exceptStartTime
 }
 
 func (e *Event) Handle(event string) {
 	err := e.Status.Event(event)
 	if err != nil {
+		fmt.Println(e)
 		panic(e)
 	}
 }
@@ -96,28 +97,30 @@ func (e *Event) handleSubmitSucess(event *fsm.Event) {
 	job.SetResourceGetTime(e.GetTimeStamp())
 	job.ComputeWaitingTime()
 	job.ComputeFinishTime()
-	/*
+	
 	fmt.Printf("%-6v EAllocate id:%-5v, %v in %v, cpu:%v,%v sub: %6v, getTime: %v, waiting: %v\n",
 	 common.GetSystemClock(),
 	 job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
 	 job.GetSubmitTime(), job.GetResourceGetTime(), job.GetWaitingTime())
-	*/
+	
 	e.SetTimeStamp(job.GetFinishTime())
 }
 
 func (e *Event) handleSubmitFail (event *fsm.Event) {
-	/*
+	
 	job := e.GetJob()
 	
 	fmt.Printf("%-6v StartWaiting id:%-5v, cpu:%v,%v sub: %6v\n",
 	common.GetSystemClock(),
 	job.Id, common.GetCurrentProcessNum(), job.GetAllocation(), 
 	job.GetSubmitTime())
-	*/
+	
 }
 
-func (e *Event) handleBackfillSupport(event *fsm.Event) {
+func (e *Event) HandleBackfillSupport() {
+	fmt.Printf("%v Backfill %v, except %v-%v\n", common.GetSystemClock(), e.GetJob().Id, e.GetBackillExceptTime(),e.GetBackillExceptTime()+e.GetJob().GetAllocation())
 	e.SetTimeStamp(e.GetBackillExceptTime())
+	e.BackfillActive = true
 }
 
 func (e *Event) handleWaitAndAllocated(event *fsm.Event) {
@@ -125,22 +128,22 @@ func (e *Event) handleWaitAndAllocated(event *fsm.Event) {
 	job.SetResourceGetTime(common.GetSystemClock())
 	job.ComputeWaitingTime()
 	job.ComputeFinishTime()
-	/*
+	
 	fmt.Printf("%-6v WaitingEnd id:%-5v, %v in %v, cpu:%v,%v sub: %6v, getTime: %v, waiting: %v\n",
 	common.GetSystemClock(),
 	job.Id, e.Status.Current(), job.GetFinishTime(), common.GetCurrentProcessNum(), job.GetAllocation(), 
 	job.GetSubmitTime(), job.GetResourceGetTime(), job.GetWaitingTime())
-	*/
+	
 	e.SetTimeStamp(job.GetFinishTime())
 }
 
 func (e *Event) handleReleaseResource(event *fsm.Event) {
 	job := e.GetJob()
 	common.Release(job.GetAllocation(), job.Allocated)
-	/*
+	
 	fmt.Printf("%-6v Release id:%-5v, %v, cpu:%v,%v sub: %6v, exe: %v, getTime: %v, waiting: %v, Finish: %v\n",
 	common.GetSystemClock(),
 	job.Id, e.Status.Current(), common.GetCurrentProcessNum(), job.GetAllocation(), 
 	job.GetSubmitTime(), job.GetExecutionTime(), job.GetResourceGetTime(), job.GetWaitingTime(), job.GetFinishTime())
-	*/
+	
 }
