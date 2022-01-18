@@ -47,7 +47,6 @@ func NewEvent(j *reader.JobDes, firstSubmitEventTime string) *Event {
 		fsm.Events{
 			{Name:"SubmitSucess", Src: []string{"Submit"}, Dst:"Finish"},
 			{Name:"SubmitFail", Src: []string{"Submit"}, Dst:"Waiting"},
-			{Name:"Backfill", Src: []string{"Submit"}, Dst:"Finish"},
 			{Name:"WaitAndAllocated", Src: []string{"Waiting"}, Dst:"Finish"},
 			{Name:"ReleaseResource", Src: []string{"Finish"}, Dst:"Release"},
 		},
