@@ -15,6 +15,7 @@ const (
 var (
 	ProcessNum  = DefaultCPUNum
 	SystemClock = DefaultTimeStart
+	BaseSubmitTime uint64
 )
 
 func Check(e error) {
@@ -30,7 +31,7 @@ func TryAllocate(req uint64, allocated bool) bool{
 	return true
 }
 
-func Allocate(req uint64,allocated bool) bool{
+func Allocate(req uint64, allocated bool) bool{
 	if req > ProcessNum || allocated {
 		return false
 	}

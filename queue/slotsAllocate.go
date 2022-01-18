@@ -4,12 +4,12 @@ import (
 	"container/heap"
 	"simulation/object"
 	"simulation/common"
-	"fmt"
+	//"fmt"
 )
 
 var (
 	SlotsQueue = make(SlotPQ, 0)
-	Root = object.NewRootSlot(common.DefaultTimeStart, common.DefaultTimeLimit, common.GetSystemCapcity(), 0)
+	Root = object.NewRootSlot(common.DefaultTimeStart, common.DefaultTimeLimit, common.GetSystemCapcity())
 )
 
 func init() {
@@ -25,29 +25,31 @@ func (pq *SlotPQ) Allocate(duration, allocation uint64) (startTime uint64) {
 	pq.Predicate()
 	bk := make([]*object.Slot, 0)
 	candicates := make([]*object.Slot, 0)
-	for pq.Len() > 0 {
+	for find := false;pq.Len() > 0 && !find; {
 		slot := heap.Pop(pq).(*object.Slot)
-		request := object.NewRequest(slot.GetStart(), slot.GetStart() + duration, allocation)
+		request := object.NewRequest(slot.GetStart(), duration, allocation)
 		slot.TryAllocate(request)
 
 		// for each slot, try sequence
 		if slot.GetIsTrySuccess() {
 			heap.Push(pq, slot)
 			seq := true
-			for durationSum := uint64(0);pq.Len() > 0 && durationSum < duration; {
+
+			for durationSum := uint64(0);pq.Len() > 0 && durationSum < duration && !find && seq; {
 				slot = heap.Pop(pq).(*object.Slot)
+				durationSum += (slot.GetEnd() - slot.GetStart())
 				slot.TryAllocate(request)
 				if !slot.GetIsTrySuccess() {
 					seq = false
 				}
 
-				durationSum += (slot.GetEnd() - slot.GetStart())
 				// no seq, pop slot0, else add to condicate
 				if !seq {
 					for _, candicate := range candicates {
-						heap.Push(pq, candicate)
+						bk = append(bk, candicate)
 					}
-					bk = append(bk, heap.Pop(pq).(*object.Slot))
+					candicates = make([]*object.Slot, 0)
+					bk = append(bk, slot)
 					seq = true
 					durationSum = 0
 				} else {
@@ -55,10 +57,11 @@ func (pq *SlotPQ) Allocate(duration, allocation uint64) (startTime uint64) {
 				}
 
 				if seq && durationSum >= duration {
-					fmt.Println("Find")
+					find = true
 					for index, cSlot := range candicates {
 						if index == 0 {
 							startTime = cSlot.GetStart()
+							request.SetStartTime(startTime)
 						}
 
 						cSlot.Allocate(request)
@@ -70,12 +73,17 @@ func (pq *SlotPQ) Allocate(duration, allocation uint64) (startTime uint64) {
 							heap.Push(pq, cSlot)
 						}
 					}
+					break
 				}
 			}
 		} else {
 			bk = append(bk, slot)
-			request.SetStartTime(slot.GetStart())
+			request.SetStartTime(slot.GetEnd())
 		}
+	}
+
+	for _, slot := range bk {
+		heap.Push(pq, slot)
 	}
 	return 
 }

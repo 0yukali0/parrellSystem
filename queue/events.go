@@ -47,9 +47,13 @@ func (pq EventPQ) Len() int { return len(pq) }
 func (pq EventPQ) Less(i, j int) bool {
 	/*
 	if pq[i].TimeStamp == pq[j].TimeStamp {
+		if pq[j].GetStatus() == "Finish" {
+			return true
+		}
 		return pq[i].GetJob().Id < pq[j].GetJob().Id
 	}
 	*/
+	
 	return pq[i].GetTimeStamp() < pq[j].GetTimeStamp()
 }
 

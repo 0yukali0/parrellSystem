@@ -49,7 +49,7 @@ func (s *Slot) GetIsTrySuccess() bool {
 }
 
 func (s *Slot) IsParent() bool {
-	return s.Parent != nil
+	return len(s.GetChildren()) > 0
 }
 
 func (s *Slot) AddChildren(children []*Slot) {

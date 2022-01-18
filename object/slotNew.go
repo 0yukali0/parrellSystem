@@ -1,14 +1,10 @@
 package object
 
-import(
-	"simulation/common"
-)
-
-func NewRootSlot(start, end, cap, allocate uint64) *Slot {
+func NewRootSlot(start, end, cap uint64) *Slot {
 	s := &Slot{
 		Start:			start,
 		End:			end,
-		Resource:		common.GetSystemCapcity(),
+		Resource:		cap,
 		IsTrySuccess:	false,
 		Parent:			nil,
 		Child:			make([]*Slot, 0),
