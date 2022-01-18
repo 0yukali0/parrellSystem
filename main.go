@@ -1,110 +1,41 @@
 package main
 
 import (
+	"container/heap"
+
+	"simulation/object"
 	"simulation/reader"
 	"simulation/queue"
-	"simulation/object"
 	"simulation/common"
-	"container/heap"
-	"fmt"
+	"simulation/framework"
 )
 
-var LastResourceReleasTime uint64
-var WaitingTotalTime uint64
+
 
 func main() {
-	WaitingTotalTime = 0
+	readFileAndInit()
+	framework.FCFS()
+	readFileAndInit()
+	framework.Preempt()
+	readFileAndInit()
+	framework.Backfill()
+}
+
+func readFileAndInit() {
 	result := reader.ReadFile(common.FilePath)
-	events := queue.GetEventsQueue()
-	jobs := queue.GetJobsQueue()
-	heap.Init(&jobs)
-	heap.Init(&events)
-	var basic string
+	submitAndFinishQueue := queue.GetEventsQueue()
+
 	// assign event to event queue
+	var firstSubmitTime string
 	for idx, meta := range result {
 		if idx == 0 {
-			basic = meta.Sub
+			firstSubmitTime = meta.Submit
 		}
-		event := object.NewEvent(common.EventStatus[0],&meta, basic)
-		heap.Push(&events, event)
+		event := object.NewEvent(&meta, firstSubmitTime)
+
+		if idx == 0 {
+			common.SetSystemClock(event.GetTimeStamp())
+		}
+		heap.Push(submitAndFinishQueue, event)
 	}
-
-	totalLen := uint64(events.Len())
-	finish := false
-	for !finish {
-		// 1.is job queue empty?
-		if len := jobs.Len();len > 0 {
-			job := heap.Pop(&jobs).(*object.Job)
-
-			// 2. if it's not empty, check whether resource is enough.
-			if common.Allocate(job.Allocation, job.Allocated) {
-				job.Allocated = true
-				event := job.GetManagerAndSetItRunning(LastResourceReleasTime)
-				event.ToNextStepInWaiting()
-				fmt.Printf("%10v, WAllocate in %10v:	%3v:%3v	Sub:%10v	waitForStart:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning())
-				heap.Push(&events, event)
-				continue
-			} else {
-				heap.Push(&jobs, job)
-			}
-		}
-
-		// 4. Is all queue clean?
-		if len := events.Len() + jobs.Len(); len == 0 {
-			fmt.Printf("Out!\n")
-			finish = true
-			continue
-		}
-
-		// 3. when job queue check all or empty, handle event queue
-		event := heap.Pop(&events).(*object.Event)
-		eventType := event.Status
-		timeStamp := event.TimeStamp
-		if eventType == common.EventStatus[0] {
-			//Keep FCFS
-			if !jobs.IsEmpty() {
-				fmt.Printf("%10v, Waiting for waiting queue and req %v\n", event.GetJob().Id, event.GetJob().Allocation)
-				heap.Push(&jobs, event.GetJob())
-				continue
-			}
-	
-			// resource isn't enough
-			ok := common.Allocate(event.GetJob().Allocation, event.GetJob().Allocated)
-			if !ok {
-				fmt.Printf("%10v, Waiting for cpu %v\n", event.GetJob().Id, event.GetJob().Allocation)
-				heap.Push(&jobs, event.GetJob())
-				continue
-			}
-	
-			// sufficient cpu
-			job := event.GetJob()
-			job.Allocated = true
-			fmt.Printf("%10v, EAllocate in %10v:	%3v:%3v	sub:%10v\n", job.Id, event.TimeStamp, common.ProcessNum, job.Allocation, job.Submission)
-			event.ToNextStep()
-			heap.Push(&events, event)
-			continue
-		}
-
-		timeStamp = event.TimeStamp
-		for {
-			job := event.GetJob()
-			common.Release(job.Allocation,job.Allocated)
-			job.Finish()
-			WaitingTotalTime += job.GetWaitingTime()
-			LastResourceReleasTime = job.GetWaitingTime() + job.Submission + job.ExecutionTime
-			event.GetJob().Allocated = false
-			fmt.Printf("%10v, Release in %10v:	%3v:%3v	sub:%10v	waitForStart:%10v	GetTime:%10v	Finish:%10v\n", job.Id, event.TimeStamp , common.ProcessNum, job.Allocation, job.Submission, job.GetWaitingTimeBeforeRunning(), job.ResourceGetTime, job.Submission+job.SimulateWaitDuration+job.ExecutionTime)
-			if events.Len() == 0 {
-				break
-			}
-			event = heap.Pop(&events).(*object.Event)
-			eventType = event.Status
-			if eventType == common.EventStatus[0] || timeStamp != event.TimeStamp{
-				heap.Push(&events, event)
-				break
-			}
-		}
-	}
-	//43117 58206
-	fmt.Printf("Average time of %v jobs are %v seconds\n", totalLen,WaitingTotalTime/totalLen)
 }

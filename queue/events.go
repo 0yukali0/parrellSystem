@@ -2,22 +2,59 @@ package queue
 
 import (
 	"simulation/object"
+	"container/heap"
+	"fmt"
 )
 
 var (
-	Events = make(EventPQ, 0)
+	SubmitAndFinishQueue = make(EventPQ, 0)
+	WaintingQueue = make(EventPQ, 0)
 )
 
-func GetEventsQueue() EventPQ{
-	return Events
+func init() {
+	heap.Init(GetWaitingQueue())
+	heap.Init(GetEventsQueue())
+}
+
+func GetEventsQueue() *EventPQ{
+	return &SubmitAndFinishQueue
+}
+
+func GetWaitingQueue() *EventPQ{
+	return &WaintingQueue
 }
 
 type EventPQ []*object.Event
 
+func (pq *EventPQ) Show() {
+	bk := make([]*object.Event, 0)
+	for index := 5;pq.Len() > 0 && index > 0;index-- {
+		event := heap.Pop(pq).(*object.Event)
+		if event.GetStatus() == "Finish" {
+			fmt.Printf("F")
+		}
+		fmt.Printf("%v:%v-%v ", event.GetTimeStamp(), event.GetTimeStamp()+event.GetJob().GetExecutionTime(),event.GetJob().Id)
+		bk = append(bk, event)
+	}
+	fmt.Println()
+	for _, item := range bk {
+		heap.Push(pq, item)
+	}
+}
+
 func (pq EventPQ) Len() int { return len(pq) }
 
 func (pq EventPQ) Less(i, j int) bool {
-	return pq[i].TimeStamp < pq[j].TimeStamp
+	/*
+	if pq[i].TimeStamp == pq[j].TimeStamp {
+		if pq[j].GetStatus() == "Finish" {
+			return true
+		}
+		return pq[i].GetJob().Id < pq[j].GetJob().Id
+	}
+	*/
+	
+	return pq[i].GetTimeStamp() < pq[j].GetTimeStamp()
 }
 
 func (pq EventPQ) Swap(i, j int) {
