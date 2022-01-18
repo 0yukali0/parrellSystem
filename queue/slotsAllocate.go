@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"simulation/object"
 	"simulation/common"
+	"fmt"
 )
 
 var (
@@ -54,6 +55,7 @@ func (pq *SlotPQ) Allocate(duration, allocation uint64) (startTime uint64) {
 				}
 
 				if seq && durationSum >= duration {
+					fmt.Println("Find")
 					for index, cSlot := range candicates {
 						if index == 0 {
 							startTime = cSlot.GetStart()
